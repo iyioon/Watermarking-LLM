@@ -15,6 +15,9 @@ In this approach, a secret key is used to generate a deterministic sequence of u
 
 ## Features
 
+- Added EOS TOken Support
+- Use opt-iml-1.3b model (instruction-tuned version of OPT)
+
 ## Environment Setup
 
 ```
