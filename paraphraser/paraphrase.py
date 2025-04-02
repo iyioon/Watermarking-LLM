@@ -44,7 +44,7 @@ def create_paraphrase_prompt(text):
 def paraphrase_text(
     text,
     model_name="facebook/opt-iml-1.3b",
-    n=256,
+    n=128,
     key=42,
     device=None,
     seed=None,
@@ -157,9 +157,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--n",
-        default=256,
+        default=128,
         type=int,
-        help="Length of the watermark sequence (default: 256)."
+        help="Length of the watermark sequence (default: 128)."
     )
     parser.add_argument(
         "--key",

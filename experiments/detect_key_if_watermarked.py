@@ -1,4 +1,5 @@
-from watermarking.detection import detect_watermark
+import torch
+from watermarking.detection import detect_watermark, generate_null_distribution
 import argparse
 import json
 from transformers import AutoTokenizer
@@ -9,8 +10,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 def detect_watermark_keys(text, json_file_path, model_name="facebook/opt-iml-1.3b",
-                          n=256, k=4, significance_threshold=0.05,
-                          visualize=False, output_file=None):
+                          n=128, k=4, significance_threshold=0.05,
+                          visualize=False, output_file=None, use_fast=True):
     """
     Test if text contains a watermark from any of the keys in the JSON file.
 
@@ -62,6 +63,33 @@ def detect_watermark_keys(text, json_file_path, model_name="facebook/opt-iml-1.3
     results = {}
     matched_keys = []
 
+    # Generate null distribution for fast testing
+    if use_fast:
+        print("Generating null distribution for fast detection...")
+        try:
+            # Try to load cached distribution first
+            cache_path = f"null_distribution_n{n}_k{k}.pt"
+            if os.path.exists(cache_path):
+                null_distribution = torch.load(cache_path)
+                print(
+                    f"Loaded cached null distribution with {len(null_distribution)} samples")
+            else:
+                # Generate new distribution
+                null_distribution = generate_null_distribution(
+                    vocab_size=len(tokenizer),
+                    n=n,
+                    k=k,
+                    n_samples=100
+                )
+                # Cache for future use
+                torch.save(null_distribution, cache_path)
+                print(f"Generated and cached null distribution")
+        except Exception as e:
+            print(f"Error with null distribution: {e}")
+            use_fast = False
+    else:
+        null_distribution = None
+
     print("\nTesting each key against the text:")
     print("-" * 60)
     print(f"{'Version':<10} {'Key':<10} {'P-value':<10} {'Result'}")
@@ -76,7 +104,9 @@ def detect_watermark_keys(text, json_file_path, model_name="facebook/opt-iml-1.3
             tokenizer=tokenizer,
             n=n,
             k=k,
-            key=key
+            key=key,
+            use_fast=use_fast,
+            null_distribution=null_distribution
         )
 
         is_watermarked = p_value < significance_threshold
@@ -185,7 +215,7 @@ def main():
     parser.add_argument(
         "--n",
         type=int,
-        default=256,
+        default=128,
         help="Watermark sequence length"
     )
     parser.add_argument(
@@ -214,6 +244,11 @@ def main():
         "--test-json-text",
         action="store_true",
         help="Test using text from the JSON file itself"
+    )
+    parser.add_argument(
+        "--use-fast",
+        action="store_true",
+        help="Use fast permutation test with pre-computed null distribution"
     )
 
     args = parser.parse_args()
@@ -265,7 +300,8 @@ def main():
         k=args.k,
         significance_threshold=args.threshold,
         visualize=args.visualize,
-        output_file=args.output
+        output_file=args.output,
+        use_fast=args.use_fast
     )
 
 
@@ -273,4 +309,4 @@ if __name__ == "__main__":
     main()
 
 
-# python -m experiments.detect_key_if_watermarked --file data/email_to_test.txt --json out/email_paraphrases.json --visualize --output out/detection_results.png
+# python -m experiments.detect_key_if_watermarked --file data/email_to_test.txt --json out/email_paraphrases.json --visualize --output out/detection_results.png --use-fast

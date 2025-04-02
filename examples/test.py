@@ -18,7 +18,7 @@ def main():
     parser.add_argument("--model", default="facebook/opt-iml-1.3b",
                         type=str, help="Model name")
     parser.add_argument("--key", default=42, type=int, help="Watermarking key")
-    parser.add_argument("--n", default=256, type=int,
+    parser.add_argument("--n", default=128, type=int,
                         help="Watermark sequence length")
     parser.add_argument("--k", default=4, type=int,
                         help="Sequence comparison length")

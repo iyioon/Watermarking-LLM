@@ -13,7 +13,7 @@ def generate_multiple_paraphrases(
     text,
     num_versions=5,
     model_name="facebook/opt-iml-1.3b",
-    n=256,
+    n=128,
     keys=None,
     include_unwatermarked=True,
     device=None,
@@ -143,7 +143,7 @@ def main():
     parser.add_argument(
         "--n",
         type=int,
-        default=256,
+        default=128,
         help="Length of watermark sequence"
     )
     parser.add_argument(
