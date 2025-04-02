@@ -90,13 +90,14 @@ def main():
     # Get or generate null distribution
     null_distribution = None
     if args.null_file and os.path.exists(args.null_file):
-        print(f"\n\n=== Loading null distribution from {args.null_file}...===")
+        print(
+            f"\n\n=== Loading null distribution from {args.null_file}... ===")
         null_distribution = torch.load(args.null_file)
         print(
             f"Loaded null distribution with {len(null_distribution)} samples")
     else:
         print(
-            f"\nGenerating null distribution with {args.null_samples} samples...")
+            f"\n\n=== Generating null distribution with {args.null_samples} samples... ===")
         null_distribution = generate_null_distribution(
             vocab_size=len(tokenizer),
             n=args.n,
@@ -190,4 +191,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python -m examples.test --file data/email.txt --verbose
+# python -m examples.test --file data/email.txt --verbose --null-file null_distribution_n128_k4.pt --seed 133
