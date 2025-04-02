@@ -6,11 +6,13 @@ from watermarking.generation import generate_shift
 from watermarking.generation import generate_rnd
 
 EMAIL_PARAPHRASE_PROMPT_TEMPLATE = """
-TASK: Reword the following using different vocabulary but EXACTLY preserve its complete meaning.
+TASK: Reword the following email using different vocabulary but EXACTLY preserve its complete meaning.
 IMPORTANT: You must maintain the EXACT same:
+- Greeting 
 - Structure (same paragraphs)
 - All information and details
 - Professional tone
+- Signature format
 
 Now rewrite this email:
 
