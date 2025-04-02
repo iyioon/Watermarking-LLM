@@ -306,7 +306,7 @@ def generate_null_distribution(vocab_size, n, k, n_samples=300, max_seed=100000)
     return null_results
 
 
-def detect_watermark(text, tokenizer, n=128, k=4, key=42, use_fast=False, null_distribution=None):
+def detect_watermark(text, tokenizer, n=128, k=4, key=42, use_fast=False, null_distribution=None, verbose=False):
     """
     Run watermark detection on the given text.
 
@@ -318,15 +318,18 @@ def detect_watermark(text, tokenizer, n=128, k=4, key=42, use_fast=False, null_d
         key (int): Key for watermark generation
         use_fast (bool): Whether to use fast permutation test
         null_distribution (torch.Tensor): Pre-computed null distribution
+        verbose (bool): Whether to print progress information
 
     Returns:
         float: p-value indicating how likely the text is watermarked
     """
-    print(f"\nStarting watermark detection with parameters:")
-    print(f"- Text length: {len(text)} characters")
-    print(f"- Key: {key}")
-    print(f"- n: {n}, k: {k}")
-    print(f"- Method: {'Fast' if use_fast else 'Standard'} permutation test")
+    if verbose:
+        print(f"\nStarting watermark detection with parameters:")
+        print(f"- Text length: {len(text)} characters")
+        print(f"- Key: {key}")
+        print(f"- n: {n}, k: {k}")
+        print(
+            f"- Method: {'Fast' if use_fast else 'Standard'} permutation test")
 
     # L1 distance function
     def l1_dist(x, y):
@@ -353,22 +356,26 @@ def detect_watermark(text, tokenizer, n=128, k=4, key=42, use_fast=False, null_d
         return xi, pi
 
     # Test statistic function
-    def phi_test(tokens, n, k, generator, vocab_size, null=False, verbose=False):
+    def phi_test(tokens, n, k, generator, vocab_size, null=False, verbose=verbose):
         return phi(tokens, n, k, generator, key_func, vocab_size, l1_dist, null, normalize=True, verbose=verbose)
 
     # Tokenize the text
-    print("Tokenizing text...")
+    if verbose:
+        print("Tokenizing text...")
     tokens = torch.tensor(tokenizer.encode(text))
-    print(f"Text tokenized to {len(tokens)} tokens")
+    if verbose:
+        print(f"Text tokenized to {len(tokens)} tokens")
 
     # Check if text is too short
     if len(tokens) < k:
-        print("Text too short for detection.")
+        if verbose:
+            print("Text too short for detection.")
         return 1.0  # Not watermarked
 
     # Choose detection method
     if use_fast and null_distribution is not None:
-        print("Running fast permutation test...")
+        if verbose:
+            print("Running fast permutation test...")
         p_value = fast_permutation_test(
             tokens=tokens,
             vocab_size=len(tokenizer),
@@ -380,11 +387,12 @@ def detect_watermark(text, tokenizer, n=128, k=4, key=42, use_fast=False, null_d
         )
     else:
         # If fast requested but no null distribution, or if standard requested
-        if use_fast:
+        if use_fast and verbose:
             print(
                 "No null distribution provided. Falling back to standard permutation test.")
 
-        print("Running standard permutation test...")
+        if verbose:
+            print("Running standard permutation test...")
         p_value = permutation_test(
             tokens=tokens,
             vocab_size=len(tokenizer),
@@ -395,6 +403,8 @@ def detect_watermark(text, tokenizer, n=128, k=4, key=42, use_fast=False, null_d
             n_runs=100
         )
 
-    print(
-        f"Detection complete. P-value: {p_value.item() if hasattr(p_value, 'item') else p_value}")
+    if verbose:
+        print(
+            f"Detection complete. P-value: {p_value.item() if hasattr(p_value, 'item') else p_value}")
+
     return p_value.item() if hasattr(p_value, 'item') else p_value

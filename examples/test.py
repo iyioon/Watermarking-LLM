@@ -3,7 +3,7 @@ import os
 import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from watermarking.detection import detect_watermark
+from watermarking.detection import detect_watermark, generate_null_distribution
 from paraphraser.paraphrase import paraphrase_text, paraphrase_without_watermark
 
 # Explicitly disable tokenizer parallelism to avoid fork warnings
@@ -26,6 +26,13 @@ def main():
     parser.add_argument("--verbose", action="store_true",
                         help="Show generation process")
     parser.add_argument("--output", type=str, help="Output file for results")
+
+    parser.add_argument("--null-file", type=str,
+                        help="Pre-computed null distribution file")
+    parser.add_argument("--null-samples", type=int, default=300,
+                        help="Number of samples for null distribution")
+    parser.add_argument("--save-null", type=str,
+                        help="Save generated null distribution to file")
 
     args = parser.parse_args()
 
@@ -80,6 +87,28 @@ def main():
         verbose=args.verbose
     )
 
+    # Get or generate null distribution
+    null_distribution = None
+    if args.null_file and os.path.exists(args.null_file):
+        print(f"\n\n=== Loading null distribution from {args.null_file}...===")
+        null_distribution = torch.load(args.null_file)
+        print(
+            f"Loaded null distribution with {len(null_distribution)} samples")
+    else:
+        print(
+            f"\nGenerating null distribution with {args.null_samples} samples...")
+        null_distribution = generate_null_distribution(
+            vocab_size=len(tokenizer),
+            n=args.n,
+            k=args.k,
+            n_samples=args.null_samples
+        )
+
+        # Save null distribution if requested
+        if args.save_null:
+            print(f"Saving null distribution to {args.save_null}...")
+            torch.save(null_distribution, args.save_null)
+
     # Detect watermarks in both texts
     print("\n\n=== Running watermark detection ===")
     print("This may take some time...")
@@ -89,7 +118,10 @@ def main():
         tokenizer,
         n=args.n,
         k=args.k,
-        key=args.key
+        key=args.key,
+        use_fast=True,
+        null_distribution=null_distribution,
+        verbose=True
     )
 
     print("\nDetecting watermarks in non-watermarked text...")
@@ -98,7 +130,10 @@ def main():
         tokenizer,
         n=args.n,
         k=args.k,
-        key=args.key
+        key=args.key,
+        use_fast=True,
+        null_distribution=null_distribution,
+        verbose=True
     )
     # Display results
     print("\n\n=== RESULTS ===")
@@ -154,3 +189,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# python -m examples.test --file data/email.txt --verbose

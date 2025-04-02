@@ -6,27 +6,11 @@ from watermarking.generation import generate_shift
 from watermarking.generation import generate_rnd
 
 EMAIL_PARAPHRASE_PROMPT_TEMPLATE = """
-TASK: Reword the following email using different vocabulary but EXACTLY preserve its complete meaning.
+TASK: Reword the following using different vocabulary but EXACTLY preserve its complete meaning.
 IMPORTANT: You must maintain the EXACT same:
-- Greeting (Hi Team)
 - Structure (same paragraphs)
 - All information and details
 - Professional tone
-- Signature format
-
-DO NOT respond to the email or write a new email. ONLY rewrite it with different words.
-
-EXAMPLE INPUT:
-Hi Team,
-I need your reports by Friday.
-Thanks,
-John
-
-EXAMPLE OUTPUT:
-Hi Team,
-Please submit your documents before the weekend.
-Appreciated,
-John
 
 Now rewrite this email:
 
